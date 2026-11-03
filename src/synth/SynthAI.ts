@@ -38,6 +38,10 @@ import { SelfKnowledgeSystem } from './self-knowledge';
 import { TheoryOfMindSystem } from './theory-of-mind-neural';
 import { MetacognitionSystem } from './metacognition-neural';
 import { AItoSAIAdapter } from './ai-to-sai-adapter';
+import { EnhancedContextAwareness } from './context-awareness-enhanced';
+import { EnhancedSelfKnowledge } from './self-knowledge-enhanced';
+import { EnhancedTheoryOfMind } from './theory-of-mind-enhanced';
+import { EnhancedMetacognition } from './metacognition-enhanced';
 
 export interface SynthResult {
   response: string;
@@ -98,6 +102,12 @@ export class SynthAI {
   
   // AI-to-SAI Adapter
   private aiToSaiAdapter: AItoSAIAdapter;
+  
+  // Enhanced Systems (v2.0 - Advanced Features)
+  private enhancedContext: EnhancedContextAwareness;
+  private enhancedSelfKnowledge: EnhancedSelfKnowledge;
+  private enhancedTheoryOfMind: EnhancedTheoryOfMind;
+  private enhancedMetacognition: EnhancedMetacognition;
 
   // State
   private conversationHistory: any[] = [];
@@ -155,12 +165,18 @@ export class SynthAI {
     
     // Initialize AI-to-SAI Adapter
     this.aiToSaiAdapter = new AItoSAIAdapter();
+    
+    // Initialize Enhanced Systems (v2.0)
+    this.enhancedContext = new EnhancedContextAwareness();
+    this.enhancedSelfKnowledge = new EnhancedSelfKnowledge();
+    this.enhancedTheoryOfMind = new EnhancedTheoryOfMind();
+    this.enhancedMetacognition = new EnhancedMetacognition();
 
     // Load persisted data
     this.knowledgeGraph.load();
     this.codeVersioning.load();
 
-    console.log('[SynthAI] v6.1 with 290 implementations + fixes initialized');
+    console.log('[SynthAI] v7.0 with enhanced neural-inspired systems initialized');
   }
 
   async process(input: string): Promise<SynthResult> {
@@ -338,12 +354,12 @@ export class SynthAI {
           break;
 
         case 'self_knowledge':
-          response = this.selfKnowledge.describeArchitecture();
+          response = this.enhancedSelfKnowledge.describeArchitecture();
           confidence = 0.95;
           break;
 
         case 'self_reasoning':
-          response = this.selfKnowledge.reasonAboutSelf(resolvedInput);
+          response = this.enhancedSelfKnowledge.introspect(resolvedInput);
           confidence = 0.9;
           break;
 
@@ -380,6 +396,24 @@ export class SynthAI {
     // Step 8: Format response with confidence
     if (confidence < 0.7) {
       response = this.confidenceCalibrator.formatResponse(response, confidence);
+    }
+
+    // Enhanced Processing (v2.0)
+    // Use enhanced context awareness for better tracking
+    const enhancedContextResult = this.enhancedContext.processWithContext(
+      resolvedInput,
+      this.conversationHistory.map(h => h.userInput)
+    );
+    
+    // Record performance metrics
+    const responseTime = Date.now() - this.startTime;
+    this.enhancedSelfKnowledge.recordPerformance(responseTime, confidence, confidence, intent.type);
+    
+    // Apply metacognitive improvements if needed
+    const metacogResult = this.enhancedMetacognition.improveResponse(response, resolvedInput);
+    if (metacogResult.improvements.length > 0) {
+      response = metacogResult.improved;
+      this.reasoningMonitor.recordStep('Metacognitive improvement applied', 0.95);
     }
 
     this.wordsGenerated += response.trim().split(/\s+/).length;
@@ -861,45 +895,68 @@ export class SynthAI {
     const lower = input.toLowerCase();
     
     if (lower.includes('believe') || lower.includes('think') || lower.includes('know')) {
-      // Create default agents for demonstration
-      this.theoryOfMind.createAgent('alice', 'Alice', 'optimistic');
-      this.theoryOfMind.createAgent('bob', 'Bob', 'skeptical');
+      // Create default agents for demonstration using enhanced system
+      this.enhancedTheoryOfMind.createAgent('alice', 'Alice', {
+        openness: 0.7,
+        conscientiousness: 0.8,
+        extraversion: 0.6,
+        agreeableness: 0.9,
+        neuroticism: 0.3
+      });
+      this.enhancedTheoryOfMind.createAgent('bob', 'Bob', {
+        openness: 0.5,
+        conscientiousness: 0.6,
+        extraversion: 0.4,
+        agreeableness: 0.5,
+        neuroticism: 0.6
+      });
       
       // Add some beliefs
-      this.theoryOfMind.addBelief('alice', 'meeting is at 3pm', 0.9);
-      this.theoryOfMind.addBelief('bob', 'meeting is at 4pm', 0.8);
+      this.enhancedTheoryOfMind.addBelief('alice', 'meeting is at 3pm', 0.9, 'testimony');
+      this.enhancedTheoryOfMind.addBelief('bob', 'meeting is at 4pm', 0.8, 'inference');
       
-      // Simulate agent response
-      return this.theoryOfMind.simulateAgent('alice', input);
+      // Add desires
+      this.enhancedTheoryOfMind.addDesire('alice', 'attend meeting on time', 0.9, 0.8);
+      this.enhancedTheoryOfMind.addDesire('bob', 'have flexible schedule', 0.7, 0.5);
+      
+      // Simulate agent response using enhanced system
+      return this.enhancedTheoryOfMind.simulateDecision('alice', input);
     }
     
     if (lower.includes('perspective') || lower.includes('point of view')) {
-      this.theoryOfMind.createAgent('agent1', 'Agent', 'neutral');
-      return this.theoryOfMind.takePerspective('agent1', input);
+      this.enhancedTheoryOfMind.createAgent('agent1', 'Agent', {
+        openness: 0.6,
+        conscientiousness: 0.7,
+        extraversion: 0.5,
+        agreeableness: 0.7,
+        neuroticism: 0.4
+      });
+      return this.enhancedTheoryOfMind.simulateDecision('agent1', input);
     }
     
+    // Use enhanced social dynamics analysis
     return this.theoryOfMind.analyzeSocialSituation(input, ['Person A', 'Person B']);
   }
 
   private handleMetacognition(input: string, currentResponse: string): string {
-    // Monitor reasoning quality
-    const quality = this.metacognition.getQualityMetrics(currentResponse, input);
-    const report = this.metacognition.monitorAndAdapt(currentResponse, input);
+    // Use enhanced metacognition system
+    const qualityReport = this.enhancedMetacognition.assessQuality(currentResponse, input);
+    const strategy = this.enhancedMetacognition.selectStrategy(input);
+    const improvement = this.enhancedMetacognition.improveResponse(currentResponse, input);
     
-    let response = `**Metacognitive Analysis**\n\n`;
-    response += `**Reasoning Quality:**\n`;
-    response += `- Depth: ${(quality.depth * 100).toFixed(0)}%\n`;
-    response += `- Coherence: ${(quality.coherence * 100).toFixed(0)}%\n`;
-    response += `- Completeness: ${(quality.completeness * 100).toFixed(0)}%\n`;
-    response += `- Confidence: ${(quality.confidence * 100).toFixed(0)}%\n`;
-    response += `- Clarity: ${(quality.clarity * 100).toFixed(0)}%\n\n`;
+    let response = `**Enhanced Metacognitive Analysis**\n\n`;
+    response += qualityReport;
+    response += `\n\n**Selected Strategy:**\n${strategy}\n`;
     
-    if (report.adaptationApplied) {
-      response += `**Adaptation Applied:** Yes\n`;
-      response += `**Final Response:**\n\n${report.finalResponse}`;
+    if (improvement.improvements.length > 0) {
+      response += `\n\n**Improvements Applied:**\n`;
+      improvement.improvements.forEach(imp => {
+        response += `- ${imp}\n`;
+      });
+      response += `\n**Improved Response:**\n\n${improvement.improved}`;
     } else {
-      response += `**Adaptation Applied:** No (quality acceptable)\n`;
-      response += `**Original Response:**\n\n${currentResponse}`;
+      response += `\n\n**No improvements needed** - response quality is acceptable.`;
+      response += `\n\n**Original Response:**\n\n${currentResponse}`;
     }
     
     return response;
@@ -909,14 +966,18 @@ export class SynthAI {
     const lower = input.toLowerCase();
     
     if (lower.includes('previous') || lower.includes('earlier') || lower.includes('before')) {
-      return this.contextResponder.getFlow();
+      return this.enhancedContext.getFullReport();
     }
     
     if (lower.includes('context') || lower.includes('conversation')) {
-      return this.contextResponder.getContext();
+      return this.enhancedContext.getFullReport();
     }
     
-    return this.contextResponder.getContext();
+    if (lower.includes('memory') || lower.includes('remember')) {
+      return this.enhancedContext.getFullReport();
+    }
+    
+    return this.enhancedContext.getFullReport();
   }
 
   getStats() {
