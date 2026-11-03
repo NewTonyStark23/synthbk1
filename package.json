@@ -6,7 +6,8 @@
     "dev": "vite",
     "build": "vite build",
     "typecheck": "tsc --noEmit",
-    "test-ml": "tsx test-ml-learning.ts"
+    "test-ml": "tsx test-ml-learning.ts",
+    "test-ml-v2": "tsx test-ml-v2-comprehensive.ts"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.1.0",

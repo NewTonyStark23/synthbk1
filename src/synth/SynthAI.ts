@@ -51,6 +51,7 @@ import {
   SelfVerification
 } from './enhanced-conversation';
 import { SyntheticLearningSystem } from './synthetic-ml';
+import { AdvancedTrainingSystem, DEFAULT_CONFIG } from './synthetic-ml-v2';
 
 export interface SynthResult {
   response: string;
@@ -134,8 +135,9 @@ export class SynthAI {
   private styleDetector: UserStyleDetector;
   private selfVerifier: SelfVerification;
   
-  // Synthetic Machine Learning System (v5.0)
-  private syntheticML: SyntheticLearningSystem;
+  // Synthetic Machine Learning System (v6.0 - Future-Proof)
+  private syntheticML: AdvancedTrainingSystem;
+  private mlTrainingData: Array<{input: string, output: string, category: string}> = [];
 
   // State
   private conversationHistory: any[] = [];
@@ -221,9 +223,9 @@ export class SynthAI {
     this.styleDetector = new UserStyleDetector();
     this.selfVerifier = new SelfVerification();
     
-    // Initialize Synthetic Machine Learning System (v5.0)
-    this.syntheticML = new SyntheticLearningSystem();
-    this.syntheticML.loadNetwork(); // Load existing trained network if available
+    // Initialize Synthetic Machine Learning System (v6.0 - Future-Proof)
+    this.syntheticML = new AdvancedTrainingSystem(DEFAULT_CONFIG);
+    this.mlTrainingData = [];
 
     // Load persisted data
     this.knowledgeGraph.load();
@@ -578,10 +580,15 @@ export class SynthAI {
       timestamp: Date.now()
     });
     
-    // Learn from this conversation (v5.0)
+    // Learn from this conversation (v6.0)
     // Only learn from successful, high-confidence responses
     if (confidence > 0.7 && response.length > 50) {
-      this.syntheticML.learnFromConversation(resolvedInput, response, intent.type);
+      this.mlTrainingData.push({
+        input: resolvedInput,
+        output: response,
+        category: intent.type
+      });
+      this.syntheticML.addExample(resolvedInput, response);
       this.log('info', 'Learned from conversation', { confidence, intent: intent.type });
     }
 
@@ -1270,16 +1277,17 @@ export class SynthAI {
    */
   learnFromConversation(input: string, output: string, category: string = 'general'): void {
     this.log('info', 'Learning from conversation', { inputLength: input.length, outputLength: output.length, category });
-    this.syntheticML.learnFromConversation(input, output, category);
+    this.mlTrainingData.push({ input, output, category });
+    this.syntheticML.addExample(input, output);
     this.log('success', 'Conversation learned');
   }
   
   /**
    * Train the neural network on accumulated data
    */
-  trainML(epochs: number = 50): { finalError: number; improvements: number } {
-    this.log('info', 'Starting ML training', { epochs });
-    const result = this.syntheticML.train(epochs);
+  trainML(): { finalTrainingLoss: number; finalValidationLoss: number; epochs: number } {
+    this.log('info', 'Starting ML training');
+    const result = this.syntheticML.train();
     this.log('success', 'ML training complete', result);
     return result;
   }
@@ -1288,14 +1296,14 @@ export class SynthAI {
    * Generate response using ML (if trained)
    */
   private generateWithML(input: string): string | null {
-    const stats = this.syntheticML.getStats();
+    const history = this.syntheticML.getHistory();
     
     // Only use ML if we have enough training data
-    if (!stats.isTrained || stats.totalExamples < 20) {
+    if (history.training.length === 0 || this.mlTrainingData.length < 20) {
       return null;
     }
     
-    this.log('info', 'Generating with ML', { trainingExamples: stats.totalExamples });
+    this.log('info', 'Generating with ML', { trainingExamples: this.mlTrainingData.length });
     const response = this.syntheticML.generate(input);
     
     if (response && response.length > 10) {
@@ -1310,7 +1318,20 @@ export class SynthAI {
    * Get ML system statistics
    */
   getMLStats(): any {
-    return this.syntheticML.getStats();
+    const history = this.syntheticML.getHistory();
+    const tokenizer = this.syntheticML.getTokenizer();
+    
+    return {
+      isTrained: history.training.length > 0,
+      totalExamples: this.mlTrainingData.length,
+      vocabularySize: tokenizer.getVocabularySize(),
+      networkInfo: {
+        layers: [this.syntheticML['config'].inputSize, ...this.syntheticML['config'].hiddenSizes, this.syntheticML['config'].outputSize],
+        totalNeurons: this.syntheticML['config'].hiddenSizes.reduce((a, b) => a + b, 0) + this.syntheticML['config'].inputSize + this.syntheticML['config'].outputSize,
+        totalWeights: 0 // Would need to calculate from network
+      },
+      trainingHistory: history.training.slice(-10)
+    };
   }
   
   /**
