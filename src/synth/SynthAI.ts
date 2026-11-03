@@ -42,6 +42,7 @@ import { EnhancedContextAwareness } from './context-awareness-enhanced';
 import { EnhancedSelfKnowledge } from './self-knowledge-enhanced';
 import { EnhancedTheoryOfMind } from './theory-of-mind-enhanced';
 import { EnhancedMetacognition } from './metacognition-enhanced';
+import { ExtremeStressTestRepairs } from './extreme-repairs';
 
 export interface SynthResult {
   response: string;
@@ -108,6 +109,9 @@ export class SynthAI {
   private enhancedSelfKnowledge: EnhancedSelfKnowledge;
   private enhancedTheoryOfMind: EnhancedTheoryOfMind;
   private enhancedMetacognition: EnhancedMetacognition;
+  
+  // Extreme Stress Test Repairs (v3.0)
+  private extremeRepairs: ExtremeStressTestRepairs;
 
   // State
   private conversationHistory: any[] = [];
@@ -171,12 +175,15 @@ export class SynthAI {
     this.enhancedSelfKnowledge = new EnhancedSelfKnowledge();
     this.enhancedTheoryOfMind = new EnhancedTheoryOfMind();
     this.enhancedMetacognition = new EnhancedMetacognition();
+    
+    // Initialize Extreme Stress Test Repairs (v3.0)
+    this.extremeRepairs = new ExtremeStressTestRepairs();
 
     // Load persisted data
     this.knowledgeGraph.load();
     this.codeVersioning.load();
 
-    console.log('[SynthAI] v7.0 with enhanced neural-inspired systems initialized');
+    console.log('[SynthAI] v8.0 with extreme stress test repairs initialized');
   }
 
   async process(input: string): Promise<SynthResult> {
@@ -189,8 +196,12 @@ export class SynthAI {
     this.reasoningMonitor.clear();
     this.reasoningMonitor.recordStep('Starting processing', 1.0);
 
+    // Extreme Stress Test Repairs (v3.0) - Apply before other processing
+    const repairedInput = this.extremeRepairs.processWithRepairs(input);
+    this.reasoningMonitor.recordStep('Extreme repairs applied', 0.98);
+
     // Priority 1: Context Awareness - Track conversation
-    const contextResult = this.contextResponder.processWith(input);
+    const contextResult = this.contextResponder.processWith(repairedInput);
     const resolvedInput = contextResult.resolvedInput;
     const context = contextResult.context;
     this.reasoningMonitor.recordStep('Context tracking', 0.95);
