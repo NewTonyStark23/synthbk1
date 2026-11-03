@@ -6,13 +6,13 @@
 // Core Neural-Inspired Infrastructure
 // ============================================
 
-interface SyntheticNeuron {
+export interface SyntheticNeuron {
   id: string;
   activation: number;
   connections: Array<{ target: string; weight: number }>;
 }
 
-interface SynapticNetwork {
+export interface SynapticNetwork {
   neurons: Map<string, SyntheticNeuron>;
   
   addNeuron(id: string, connections?: Array<{ target: string; weight: number }>): void;
@@ -23,7 +23,7 @@ interface SynapticNetwork {
   getTopActivated(count?: number): Array<{ id: string; activation: number }>;
 }
 
-class SynapticNetworkImpl implements SynapticNetwork {
+export class SynapticNetworkImpl implements SynapticNetwork {
   neurons: Map<string, SyntheticNeuron> = new Map();
   
   addNeuron(id: string, connections: Array<{ target: string; weight: number }> = []): void {

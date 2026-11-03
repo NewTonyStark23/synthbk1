@@ -33,6 +33,11 @@ import {
   PortfolioGenerator
 } from './advanced-fixes';
 import { DeepReasoningEngine } from './deep-reasoning-neural';
+import { ContextAwareResponder } from './context-awareness';
+import { SelfKnowledgeSystem } from './self-knowledge';
+import { TheoryOfMindSystem } from './theory-of-mind-neural';
+import { MetacognitionSystem } from './metacognition-neural';
+import { AItoSAIAdapter } from './ai-to-sai-adapter';
 
 export interface SynthResult {
   response: string;
@@ -78,6 +83,21 @@ export class SynthAI {
 
   // Neural-inspired deep reasoning (Option C: Hybrid)
   private deepReasoningEngine: DeepReasoningEngine;
+  
+  // Priority 1: Context Awareness
+  private contextResponder: ContextAwareResponder;
+  
+  // Priority 2: Self-Knowledge
+  private selfKnowledge: SelfKnowledgeSystem;
+  
+  // Priority 3: Theory of Mind
+  private theoryOfMind: TheoryOfMindSystem;
+  
+  // Priority 4: Metacognition
+  private metacognition: MetacognitionSystem;
+  
+  // AI-to-SAI Adapter
+  private aiToSaiAdapter: AItoSAIAdapter;
 
   // State
   private conversationHistory: any[] = [];
@@ -120,6 +140,21 @@ export class SynthAI {
 
     // Initialize neural-inspired deep reasoning
     this.deepReasoningEngine = new DeepReasoningEngine();
+    
+    // Initialize Priority 1: Context Awareness
+    this.contextResponder = new ContextAwareResponder();
+    
+    // Initialize Priority 2: Self-Knowledge
+    this.selfKnowledge = new SelfKnowledgeSystem();
+    
+    // Initialize Priority 3: Theory of Mind
+    this.theoryOfMind = new TheoryOfMindSystem();
+    
+    // Initialize Priority 4: Metacognition
+    this.metacognition = new MetacognitionSystem();
+    
+    // Initialize AI-to-SAI Adapter
+    this.aiToSaiAdapter = new AItoSAIAdapter();
 
     // Load persisted data
     this.knowledgeGraph.load();
@@ -138,9 +173,14 @@ export class SynthAI {
     this.reasoningMonitor.clear();
     this.reasoningMonitor.recordStep('Starting processing', 1.0);
 
+    // Priority 1: Context Awareness - Track conversation
+    const contextResult = this.contextResponder.processWith(input);
+    const resolvedInput = contextResult.resolvedInput;
+    const context = contextResult.context;
+    this.reasoningMonitor.recordStep('Context tracking', 0.95);
+
     // Step 1: Extract entities and resolve pronouns
     this.pronounResolver.extractEntities(input);
-    const resolvedInput = this.resolvePronouns(input);
     this.reasoningMonitor.recordStep('Pronoun resolution', 0.95);
 
     // Step 2: Expand synonyms for better matching
@@ -297,6 +337,36 @@ export class SynthAI {
           confidence = 0.9;
           break;
 
+        case 'self_knowledge':
+          response = this.selfKnowledge.describeArchitecture();
+          confidence = 0.95;
+          break;
+
+        case 'self_reasoning':
+          response = this.selfKnowledge.reasonAboutSelf(resolvedInput);
+          confidence = 0.9;
+          break;
+
+        case 'theory_of_mind':
+          response = this.handleTheoryOfMind(resolvedInput);
+          confidence = 0.85;
+          break;
+
+        case 'metacognition':
+          response = this.handleMetacognition(resolvedInput, response);
+          confidence = 0.88;
+          break;
+
+        case 'ai_to_sai':
+          response = this.aiToSaiAdapter.adaptAItoSAI(resolvedInput);
+          confidence = 0.9;
+          break;
+
+        case 'context_query':
+          response = this.handleContextQuery(resolvedInput);
+          confidence = 0.92;
+          break;
+
         default:
           response = this.handleConversation(resolvedInput, commonsense);
           confidence = 0.7;
@@ -314,6 +384,9 @@ export class SynthAI {
 
     this.wordsGenerated += response.trim().split(/\s+/).length;
     this.tokensGenerated = Utils.estimateTokens(response);
+
+    // Priority 1: Context Awareness - Track response
+    this.contextResponder.addResponse(response);
 
     // Step 9: Store in memory
     this.memory.add({
@@ -462,6 +535,63 @@ export class SynthAI {
     ];
     if (deepReasoningPatterns.some(p => new RegExp(p, 'i').test(lower))) {
       return { type: 'deep_reasoning', confidence: 0.90 };
+    }
+
+    // 10. Self-knowledge detection
+    const selfKnowledgePatterns = [
+      'how.*you.*work', 'your.*architecture', 'your.*capabilities', 'what.*you.*can.*do',
+      'explain.*yourself', 'tell.*me.*about.*you', 'your.*limitations', 'how.*do.*you.*think'
+    ];
+    if (selfKnowledgePatterns.some(p => new RegExp(p, 'i').test(lower))) {
+      return { type: 'self_knowledge', confidence: 0.92 };
+    }
+
+    // 11. Self-reasoning detection
+    const selfReasoningPatterns = [
+      'how.*process.*this', 'how.*you.*reason', 'your.*reasoning.*process',
+      'how.*do.*you.*think.*about', 'explain.*your.*thinking'
+    ];
+    if (selfReasoningPatterns.some(p => new RegExp(p, 'i').test(lower))) {
+      return { type: 'self_reasoning', confidence: 0.90 };
+    }
+
+    // 12. Theory of mind detection
+    const theoryOfMindPatterns = [
+      'what.*do.*they.*think', 'what.*does.*he.*believe', 'what.*does.*she.*know',
+      'perspective.*of', 'point.*of.*view', 'from.*their.*perspective',
+      'alice.*believes', 'bob.*thinks', 'agent.*simulation'
+    ];
+    if (theoryOfMindPatterns.some(p => new RegExp(p, 'i').test(lower))) {
+      return { type: 'theory_of_mind', confidence: 0.88 };
+    }
+
+    // 13. Metacognition detection
+    const metacognitionPatterns = [
+      'how.*confident.*are.*you', 'quality.*of.*reasoning', 'how.*good.*is.*this',
+      'evaluate.*your.*response', 'assess.*your.*understanding', 'metacognition',
+      'monitor.*your.*reasoning'
+    ];
+    if (metacognitionPatterns.some(p => new RegExp(p, 'i').test(lower))) {
+      return { type: 'metacognition', confidence: 0.90 };
+    }
+
+    // 14. AI-to-SAI adapter detection
+    const aiToSaiPatterns = [
+      'adapt.*ai.*repo', 'convert.*neural.*network', 'transform.*transformer.*to.*sai',
+      'implement.*gpt.*synthetically', 'adapt.*machine.*learning', 'convert.*deep.*learning',
+      'synthetic.*version.*of', 'sai.*implementation.*of'
+    ];
+    if (aiToSaiPatterns.some(p => new RegExp(p, 'i').test(lower))) {
+      return { type: 'ai_to_sai', confidence: 0.93 };
+    }
+
+    // 15. Context query detection
+    const contextQueryPatterns = [
+      'what.*did.*i.*ask.*before', 'previous.*question', 'earlier.*we.*discussed',
+      'conversation.*history', 'what.*was.*the.*context', 'refer.*to.*previous'
+    ];
+    if (contextQueryPatterns.some(p => new RegExp(p, 'i').test(lower))) {
+      return { type: 'context_query', confidence: 0.92 };
     }
 
     // Complex reasoning (check first - higher priority)
@@ -724,6 +854,69 @@ export class SynthAI {
     // Use neural-inspired deep reasoning engine
     const reasoning = this.deepReasoningEngine.reason(input);
     return reasoning;
+  }
+
+  private handleTheoryOfMind(input: string): string {
+    // Check if asking about agent beliefs/perspectives
+    const lower = input.toLowerCase();
+    
+    if (lower.includes('believe') || lower.includes('think') || lower.includes('know')) {
+      // Create default agents for demonstration
+      this.theoryOfMind.createAgent('alice', 'Alice', 'optimistic');
+      this.theoryOfMind.createAgent('bob', 'Bob', 'skeptical');
+      
+      // Add some beliefs
+      this.theoryOfMind.addBelief('alice', 'meeting is at 3pm', 0.9);
+      this.theoryOfMind.addBelief('bob', 'meeting is at 4pm', 0.8);
+      
+      // Simulate agent response
+      return this.theoryOfMind.simulateAgent('alice', input);
+    }
+    
+    if (lower.includes('perspective') || lower.includes('point of view')) {
+      this.theoryOfMind.createAgent('agent1', 'Agent', 'neutral');
+      return this.theoryOfMind.takePerspective('agent1', input);
+    }
+    
+    return this.theoryOfMind.analyzeSocialSituation(input, ['Person A', 'Person B']);
+  }
+
+  private handleMetacognition(input: string, currentResponse: string): string {
+    // Monitor reasoning quality
+    const quality = this.metacognition.getQualityMetrics(currentResponse, input);
+    const report = this.metacognition.monitorAndAdapt(currentResponse, input);
+    
+    let response = `**Metacognitive Analysis**\n\n`;
+    response += `**Reasoning Quality:**\n`;
+    response += `- Depth: ${(quality.depth * 100).toFixed(0)}%\n`;
+    response += `- Coherence: ${(quality.coherence * 100).toFixed(0)}%\n`;
+    response += `- Completeness: ${(quality.completeness * 100).toFixed(0)}%\n`;
+    response += `- Confidence: ${(quality.confidence * 100).toFixed(0)}%\n`;
+    response += `- Clarity: ${(quality.clarity * 100).toFixed(0)}%\n\n`;
+    
+    if (report.adaptationApplied) {
+      response += `**Adaptation Applied:** Yes\n`;
+      response += `**Final Response:**\n\n${report.finalResponse}`;
+    } else {
+      response += `**Adaptation Applied:** No (quality acceptable)\n`;
+      response += `**Original Response:**\n\n${currentResponse}`;
+    }
+    
+    return response;
+  }
+
+  private handleContextQuery(input: string): string {
+    const lower = input.toLowerCase();
+    
+    if (lower.includes('previous') || lower.includes('earlier') || lower.includes('before')) {
+      return this.contextResponder.getFlow();
+    }
+    
+    if (lower.includes('context') || lower.includes('conversation')) {
+      return this.contextResponder.getContext();
+    }
+    
+    return this.contextResponder.getContext();
   }
 
   getStats() {
