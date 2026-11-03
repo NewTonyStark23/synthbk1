@@ -32,6 +32,7 @@ import {
   HistoricalAnalysisEngine,
   PortfolioGenerator
 } from './advanced-fixes';
+import { DeepReasoningEngine } from './deep-reasoning-neural';
 
 export interface SynthResult {
   response: string;
@@ -75,6 +76,9 @@ export class SynthAI {
   private historicalAnalysisEngine: HistoricalAnalysisEngine;
   private portfolioGenerator: PortfolioGenerator;
 
+  // Neural-inspired deep reasoning (Option C: Hybrid)
+  private deepReasoningEngine: DeepReasoningEngine;
+
   // State
   private conversationHistory: any[] = [];
   private turns = 0;
@@ -113,6 +117,9 @@ export class SynthAI {
     this.proofEngine = new ProofEngine();
     this.historicalAnalysisEngine = new HistoricalAnalysisEngine();
     this.portfolioGenerator = new PortfolioGenerator();
+
+    // Initialize neural-inspired deep reasoning
+    this.deepReasoningEngine = new DeepReasoningEngine();
 
     // Load persisted data
     this.knowledgeGraph.load();
@@ -285,6 +292,11 @@ export class SynthAI {
           confidence = 0.95;
           break;
 
+        case 'deep_reasoning':
+          response = this.performDeepReasoning(resolvedInput);
+          confidence = 0.9;
+          break;
+
         default:
           response = this.handleConversation(resolvedInput, commonsense);
           confidence = 0.7;
@@ -440,6 +452,16 @@ export class SynthAI {
     const portfolioPatterns = ['invest.*\\$\\d+', 'portfolio.*stock.*crypto.*bond', 'diversified portfolio'];
     if (portfolioPatterns.some(p => new RegExp(p, 'i').test(lower))) {
       return { type: 'portfolio', confidence: 0.95 };
+    }
+
+    // 9. Deep reasoning detection (neural-inspired)
+    const deepReasoningPatterns = [
+      'deep.*understand', 'fundamental.*principle', 'why.*really', 'underlying.*mechanism',
+      'how.*work.*depth', 'explain.*conceptually', 'abstract.*principle', 'core.*insight',
+      'first.*principle', 'root.*cause', 'essential.*nature', 'true.*meaning'
+    ];
+    if (deepReasoningPatterns.some(p => new RegExp(p, 'i').test(lower))) {
+      return { type: 'deep_reasoning', confidence: 0.90 };
     }
 
     // Complex reasoning (check first - higher priority)
@@ -696,6 +718,12 @@ export class SynthAI {
     }
 
     return "I'm listening. Could you tell me more about what you're looking for?";
+  }
+
+  private performDeepReasoning(input: string): string {
+    // Use neural-inspired deep reasoning engine
+    const reasoning = this.deepReasoningEngine.reason(input);
+    return reasoning;
   }
 
   getStats() {
