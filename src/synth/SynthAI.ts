@@ -43,6 +43,13 @@ import { EnhancedSelfKnowledge } from './self-knowledge-enhanced';
 import { EnhancedTheoryOfMind } from './theory-of-mind-enhanced';
 import { EnhancedMetacognition } from './metacognition-enhanced';
 import { ExtremeStressTestRepairs } from './extreme-repairs';
+import { 
+  EnhancedConversationHandler, 
+  ContextualPronounResolver, 
+  ResponseLengthOptimizer,
+  UserStyleDetector,
+  SelfVerification
+} from './enhanced-conversation';
 
 export interface SynthResult {
   response: string;
@@ -118,6 +125,13 @@ export class SynthAI {
   
   // Extreme Stress Test Repairs (v3.0)
   private extremeRepairs: ExtremeStressTestRepairs;
+  
+  // Enhanced Conversation Systems (v4.0)
+  private enhancedConversation: EnhancedConversationHandler;
+  private contextualPronounResolver: ContextualPronounResolver;
+  private lengthOptimizer: ResponseLengthOptimizer;
+  private styleDetector: UserStyleDetector;
+  private selfVerifier: SelfVerification;
 
   // State
   private conversationHistory: any[] = [];
@@ -195,6 +209,13 @@ export class SynthAI {
     
     // Initialize Extreme Stress Test Repairs (v3.0)
     this.extremeRepairs = new ExtremeStressTestRepairs();
+    
+    // Initialize Enhanced Conversation Systems (v4.0)
+    this.enhancedConversation = new EnhancedConversationHandler();
+    this.contextualPronounResolver = new ContextualPronounResolver();
+    this.lengthOptimizer = new ResponseLengthOptimizer();
+    this.styleDetector = new UserStyleDetector();
+    this.selfVerifier = new SelfVerification();
 
     // Load persisted data
     this.knowledgeGraph.load();
@@ -473,6 +494,28 @@ export class SynthAI {
       response = metacogResult.improved;
       this.reasoningMonitor.recordStep('Metacognitive improvement applied', 0.95);
     }
+    
+    // Self-verification (v4.0)
+    const verification = this.selfVerifier.verifyResponse(response, resolvedInput, intent.type);
+    if (!verification.verified) {
+      this.log('warning', 'Self-verification detected issues', { 
+        issues: verification.issues, 
+        confidence: verification.confidence 
+      });
+      
+      // If confidence is too low, add a note
+      if (verification.confidence < 0.6) {
+        response += '\n\n_Note: I\'m not fully confident in this response. Please let me know if I misunderstood!_';
+        confidence *= verification.confidence;
+      }
+    }
+    
+    // Adapt response to user style
+    const userStyle = this.styleDetector.detectStyle(resolvedInput, this.conversationHistory.map(h => h.userInput));
+    response = this.styleDetector.adaptResponse(response, userStyle);
+    
+    // Optimize response length
+    response = this.lengthOptimizer.optimize(response, resolvedInput.split(/\s+/).length, intent.type);
 
     this.wordsGenerated += response.trim().split(/\s+/).length;
     this.tokensGenerated = Utils.estimateTokens(response);
@@ -568,15 +611,26 @@ export class SynthAI {
   private resolvePronouns(input: string): string {
     let resolved = input;
 
-    // Replace pronouns with resolved entities
+    // Replace pronouns with resolved entities using contextual resolver
     const pronouns = ['it', 'this', 'that', 'they', 'these'];
     pronouns.forEach(pronoun => {
       const regex = new RegExp(`\\b${pronoun}\\b`, 'gi');
       const match = input.match(regex);
       if (match) {
-        const entity = this.pronounResolver.resolve(pronoun, input);
+        // Use contextual pronoun resolver with conversation history
+        const history = this.conversationHistory.map(h => ({
+          role: 'user',
+          content: h.userInput
+        })).concat(this.conversationHistory.map(h => ({
+          role: 'assistant',
+          content: h.aiResponse
+        })));
+        
+        const entity = this.contextualPronounResolver.resolve(pronoun, input, history);
+        
         if (entity) {
           resolved = resolved.replace(regex, entity);
+          this.log('info', `Resolved pronoun "${pronoun}" to "${entity}"`);
         }
       }
     });
@@ -817,15 +871,25 @@ export class SynthAI {
       return { type: 'complex_reasoning', confidence: 0.85 };
     }
 
-    // Code generation
-    const codeActions = ['build', 'create', 'make', 'generate', 'code', 'write', 'develop'];
-    const codeObjects = ['calculator', 'timer', 'calendar', 'todo', 'form', 'game', 'website', 'dashboard', 'chart', 'player', 'editor', 'gallery', 'app', 'portfolio', 'backtest'];
+    // Code generation - check for action words OR code-related context
+    const codeActions = ['build', 'create', 'make', 'generate', 'code', 'write', 'develop', 'implement', 'design'];
+    const codeObjects = ['calculator', 'timer', 'calendar', 'todo', 'form', 'game', 'website', 'dashboard', 'chart', 'player', 'editor', 'gallery', 'app', 'portfolio', 'backtest', 'countdown', 'count down', 'clock', 'animation', 'interface', 'button', 'menu', 'page', 'component'];
     
     const hasCodeAction = codeActions.some(action => expanded.includes(action));
     const hasCodeObject = codeObjects.some(obj => expanded.includes(obj));
+    
+    // Also check for code-related phrases
+    const codePhrases = ['html', 'css', 'javascript', 'code', 'program', 'script', 'function', 'ui', 'ux', 'frontend', 'backend'];
+    const hasCodePhrase = codePhrases.some(phrase => expanded.includes(phrase));
 
-    if (hasCodeAction && hasCodeObject) {
+    // If there's a code action AND (code object OR code phrase), it's code generation
+    if (hasCodeAction && (hasCodeObject || hasCodePhrase)) {
       return { type: 'code_generation', confidence: 0.95 };
+    }
+    
+    // If there's just a code action with descriptive words, still likely code generation
+    if (hasCodeAction && lower.length > 20) {
+      return { type: 'code_generation', confidence: 0.85 };
     }
 
     // Modification
@@ -844,13 +908,16 @@ export class SynthAI {
       return { type: 'question', confidence: 0.85 };
     }
 
-    // Greeting (expanded to include test messages and common phrases)
+    // Greeting - must be short and greeting-like, not a code request
+    const isShortMessage = input.trim().length < 50;
     const greetingPatterns = [
       /^(hi|hello|hey|greetings|good morning|good evening|howdy|sup|yo)\b/i,
-      /\b(testing|test|is this thing on|can you hear me|are you there|hello world)\b/i,
-      /\b(hey there|hi there|hello there)\b/i
+      /^(testing|test|is this thing on|can you hear me|are you there|hello world)\b/i,
+      /^(hey there|hi there|hello there)\b/i
     ];
-    if (greetingPatterns.some(p => p.test(input.trim()))) {
+    
+    // Only classify as greeting if it's short AND matches greeting pattern
+    if (isShortMessage && greetingPatterns.some(p => p.test(input.trim()))) {
       return { type: 'greeting', confidence: 0.95 };
     }
 
@@ -1060,48 +1127,17 @@ export class SynthAI {
   }
 
   private handleConversation(input: string, commonsense: string[]): string {
-    const lower = input.toLowerCase();
+    // Use enhanced conversation handler
+    const history = this.conversationHistory.map(h => h.userInput);
+    const response = this.enhancedConversation.handleConversation(input, history, 'conversation', '');
     
-    // Handle test/check messages
-    if (/\b(testing|test|is this (thing )?on|can you hear me|are you there)\b/i.test(lower)) {
-      return "Yes, I'm here and working! 🎯 All systems operational. How can I help you today?";
-    }
+    // Adapt to user style
+    const adapted = this.enhancedConversation.adaptToUser(response, input, history);
     
-    // Handle simple acknowledgments
-    if (/\b(ok|okay|sure|yes|yeah|got it|understood|thanks|thank you)\b/i.test(lower)) {
-      return "You're welcome! Is there anything else I can help you with?";
-    }
+    // Optimize length
+    const optimized = this.lengthOptimizer.optimize(adapted, input.split(/\s+/).length, 'conversation');
     
-    // Handle "how are you" type questions
-    if (/\b(how are you|how('s| is) it going|what('s| is) up|how do you do)\b/i.test(lower)) {
-      return "I'm functioning optimally! All 324 systems are running at 99%+ efficiency. How can I assist you today?";
-    }
-    
-    // Handle "what can you do" questions
-    if (/\b(what can you do|what are your capabilities|help me with|what do you know)\b/i.test(lower)) {
-      return "I can help with many things:\n\n" +
-             "• **Deep reasoning** - Complex analysis and problem-solving\n" +
-             "• **Code generation** - Build websites, apps, algorithms\n" +
-             "• **Security analysis** - Find vulnerabilities in code\n" +
-             "• **Math & proofs** - Solve equations, prove theorems\n" +
-             "• **Creative writing** - Stories, poems, haikus\n" +
-             "• **Translation** - Multiple languages\n" +
-             "• **Trading & finance** - Portfolio analysis, strategies\n" +
-             "• **And much more!** Just ask me anything.";
-    }
-    
-    // Use commonsense if available
-    if (commonsense.length > 0) {
-      return `I understand. ${commonsense.join('. ')}. How can I help with that?`;
-    }
-    
-    // Handle questions that don't match specific patterns
-    if (lower.includes('?')) {
-      return "That's an interesting question! Could you provide a bit more context so I can give you the best possible answer?";
-    }
-    
-    // Default conversational response
-    return "I'm listening. Could you tell me more about what you're looking for? I'm here to help with reasoning, coding, analysis, or just conversation.";
+    return optimized;
   }
 
   private performDeepReasoning(input: string): string {
