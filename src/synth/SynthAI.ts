@@ -15,6 +15,13 @@ import {
   ReasoningMonitor
 } from './core-infrastructure';
 import { Utils } from './utils';
+import {
+  EnhancedKnowledgeBase,
+  EnhancedMultiTaskHandler,
+  EnhancedCodeGenerator,
+  EnhancedReasoningEngine,
+  EnhancedPatternDetector
+} from './fixes';
 
 export interface SynthResult {
   response: string;
@@ -41,6 +48,13 @@ export class SynthAI {
   private commonsenseReasoner: CommonsenseReasoner;
   private reasoningMonitor: ReasoningMonitor;
 
+  // Enhanced systems (fixes)
+  private enhancedKnowledge: EnhancedKnowledgeBase;
+  private multiTaskHandler: EnhancedMultiTaskHandler;
+  private enhancedCodeGenerator: EnhancedCodeGenerator;
+  private enhancedReasoning: EnhancedReasoningEngine;
+  private patternDetector: EnhancedPatternDetector;
+
   // State
   private conversationHistory: any[] = [];
   private turns = 0;
@@ -63,11 +77,18 @@ export class SynthAI {
     this.commonsenseReasoner = new CommonsenseReasoner();
     this.reasoningMonitor = new ReasoningMonitor();
 
+    // Initialize enhanced systems
+    this.enhancedKnowledge = new EnhancedKnowledgeBase();
+    this.multiTaskHandler = new EnhancedMultiTaskHandler();
+    this.enhancedCodeGenerator = new EnhancedCodeGenerator();
+    this.enhancedReasoning = new EnhancedReasoningEngine();
+    this.patternDetector = new EnhancedPatternDetector();
+
     // Load persisted data
     this.knowledgeGraph.load();
     this.codeVersioning.load();
 
-    console.log('[SynthAI] v6.0 with 290 implementations initialized');
+    console.log('[SynthAI] v6.1 with 290 implementations + fixes initialized');
   }
 
   async process(input: string): Promise<SynthResult> {
@@ -101,55 +122,69 @@ export class SynthAI {
     const commonsense = this.commonsenseReasoner.reason([resolvedInput]);
     this.reasoningMonitor.recordStep('Commonsense reasoning', 0.8);
 
-    // Step 6: Generate response based on intent
+    // Step 6: Check for multi-task requests
+    const detectedTasks = this.multiTaskHandler.detectTasks(resolvedInput);
+    
+    // Step 7: Generate response based on intent
     this.firstTokenTime = Date.now();
     let response = '';
     let code: string | undefined;
     let confidence = intent.confidence;
 
-    switch (intent.type) {
-      case 'code_generation':
-        const codeResult = this.generateCode(resolvedInput);
-        code = codeResult.code;
-        response = codeResult.description;
-        confidence = 0.95;
-        break;
+    // Handle multi-task requests
+    if (detectedTasks.length > 1) {
+      response = this.multiTaskHandler.generateMultiTaskResponse(detectedTasks, resolvedInput);
+      confidence = 0.85;
+    } else {
+      switch (intent.type) {
+        case 'code_generation':
+          const codeResult = this.generateCode(resolvedInput);
+          code = codeResult.code;
+          response = codeResult.description;
+          confidence = 0.95;
+          break;
 
-      case 'modification':
-        const modResult = this.modifyCode(resolvedInput);
-        if (modResult) {
-          code = modResult.code;
-          response = modResult.description;
-          confidence = 0.9;
-        } else {
-          response = "I don't have any code to modify yet. Try asking me to build something first.";
+        case 'modification':
+          const modResult = this.modifyCode(resolvedInput);
+          if (modResult) {
+            code = modResult.code;
+            response = modResult.description;
+            confidence = 0.9;
+          } else {
+            response = "I don't have any code to modify yet. Try asking me to build something first.";
+            confidence = 0.7;
+          }
+          break;
+
+        case 'question':
+          response = this.answerQuestion(resolvedInput, commonsense);
+          confidence = 0.85;
+          break;
+
+        case 'math':
+          response = this.solveMath(resolvedInput);
+          confidence = 0.95;
+          break;
+
+        case 'greeting':
+          response = this.handleGreeting(emotion);
+          confidence = 0.95;
+          break;
+
+        case 'clarification':
+          response = this.clarificationEngine.generateClarification(intent, []);
+          confidence = 0.6;
+          break;
+
+        case 'complex_reasoning':
+          response = this.enhancedReasoning.reasonAboutComplexScenario(resolvedInput);
+          confidence = 0.8;
+          break;
+
+        default:
+          response = this.handleConversation(resolvedInput, commonsense);
           confidence = 0.7;
-        }
-        break;
-
-      case 'question':
-        response = this.answerQuestion(resolvedInput, commonsense);
-        confidence = 0.85;
-        break;
-
-      case 'math':
-        response = this.solveMath(resolvedInput);
-        confidence = 0.95;
-        break;
-
-      case 'greeting':
-        response = this.handleGreeting(emotion);
-        confidence = 0.95;
-        break;
-
-      case 'clarification':
-        response = this.clarificationEngine.generateClarification(intent, []);
-        confidence = 0.6;
-        break;
-
-      default:
-        response = this.handleConversation(resolvedInput, commonsense);
-        confidence = 0.7;
+      }
     }
 
     // Step 7: Calibrate confidence
@@ -253,9 +288,15 @@ export class SynthAI {
     const lower = input.toLowerCase();
     const expanded = this.synonymExpander.expandText(lower);
 
+    // Complex reasoning (check first - higher priority)
+    const complexIndicators = ['pattern', 'underlying principle', 'why do i keep', 'cognitive bias', 'break the pattern', 'navigate', 'social dynamic', 'what do they really mean'];
+    if (complexIndicators.some(ind => lower.includes(ind))) {
+      return { type: 'complex_reasoning', confidence: 0.85 };
+    }
+
     // Code generation
     const codeActions = ['build', 'create', 'make', 'generate', 'code', 'write', 'develop'];
-    const codeObjects = ['calculator', 'timer', 'calendar', 'todo', 'form', 'game', 'website', 'dashboard', 'chart', 'player', 'editor', 'gallery', 'app'];
+    const codeObjects = ['calculator', 'timer', 'calendar', 'todo', 'form', 'game', 'website', 'dashboard', 'chart', 'player', 'editor', 'gallery', 'app', 'portfolio', 'backtest'];
     
     const hasCodeAction = codeActions.some(action => expanded.includes(action));
     const hasCodeObject = codeObjects.some(obj => expanded.includes(obj));
@@ -414,6 +455,13 @@ export class SynthAI {
   private answerQuestion(input: string, commonsense: string[]): string {
     const keywords = Utils.extractKeywords(input);
     
+    // Check enhanced knowledge base first
+    const enhancedResults = this.enhancedKnowledge.searchFacts(input);
+    if (enhancedResults.length > 0 && enhancedResults[0].relevance > 0.7) {
+      const fact = enhancedResults[0];
+      return this.formatFactResponse(fact.key, fact.value);
+    }
+    
     // Check knowledge graph
     const kgResults = this.knowledgeGraph.search(keywords.join(' '));
     if (kgResults.length > 0) {
@@ -432,6 +480,29 @@ export class SynthAI {
     }
 
     return "I'm not sure about that. Could you clarify what you're asking about?";
+  }
+
+  private formatFactResponse(key: string, value: any): string {
+    let response = `**${key.replace(/_/g, ' ').toUpperCase()}**\n\n`;
+    
+    if (typeof value === 'object' && !Array.isArray(value)) {
+      Object.entries(value).forEach(([k, v]) => {
+        if (typeof v === 'object' && v !== null && !Array.isArray(v)) {
+          response += `**${k.replace(/_/g, ' ')}:**\n`;
+          Object.entries(v as Record<string, any>).forEach(([subK, subV]) => {
+            response += `  - ${subK.replace(/_/g, ' ')}: ${subV}\n`;
+          });
+        } else if (Array.isArray(v)) {
+          response += `**${k.replace(/_/g, ' ')}:** ${v.join(', ')}\n`;
+        } else {
+          response += `**${k.replace(/_/g, ' ')}:** ${v}\n`;
+        }
+      });
+    } else {
+      response += JSON.stringify(value, null, 2);
+    }
+    
+    return response;
   }
 
   private solveMath(input: string): string {
