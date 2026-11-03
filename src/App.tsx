@@ -1,6 +1,10 @@
 import { useState, useEffect } from 'react';
 import { SynthAI } from './synth/SynthAI';
 import type { SynthResult } from './synth/SynthAI';
+import { LanguageUnderstandingSystems } from './synth/language-understanding';
+import { AmbiguityResolutionSystems } from './synth/ambiguity-resolution';
+import { ImplicitWorldKnowledgeSystems } from './synth/implicit-knowledge';
+import { EmergentReasoningSystems } from './synth/emergent-reasoning';
 
 function App() {
   const [synth, setSynth] = useState<SynthAI | null>(null);
@@ -91,7 +95,7 @@ function App() {
         <div className="mb-8 bg-gray-800/30 border border-gray-700/50 rounded-xl p-5">
           <h2 className="text-sm font-bold mb-3 flex items-center gap-2">
             <span>🏗️</span>
-            <span className="text-gray-400 uppercase tracking-wider text-xs">Core Infrastructure (Implemented)</span>
+            <span className="text-gray-400 uppercase tracking-wider text-xs">Implemented Systems (71/290)</span>
           </h2>
           <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-2">
             {[
@@ -101,12 +105,40 @@ function App() {
               { name: 'Code Versioning', icon: '📝', status: '✅' },
               { name: 'Pronoun Resolver', icon: '🔗', status: '✅' },
               { name: 'Synonym Engine', icon: '📖', status: '✅' },
-              { name: 'Confidence Cal.', icon: '📊', status: '✅' },
-              { name: 'Clarification', icon: '❓', status: '✅' },
-              { name: 'Constraint Solver', icon: '🧩', status: '✅' },
-              { name: 'Commonsense', icon: '💡', status: '✅' },
-              { name: 'Reasoning Monitor', icon: '🔍', status: '✅' },
-              { name: 'Emotion Detection', icon: '😊', status: '✅' },
+              { name: 'Paraphrase Detect', icon: '🔄', status: '✅' },
+              { name: 'Fuzzy Matching', icon: '🎯', status: '✅' },
+              { name: 'Concept Hierarchy', icon: '🌳', status: '✅' },
+              { name: 'Metaphor Detect', icon: '🎭', status: '✅' },
+              { name: 'Sarcasm Detect', icon: '😏', status: '✅' },
+              { name: 'Sentiment Analysis', icon: '😊', status: '✅' },
+              { name: 'Tone Analysis', icon: '🎵', status: '✅' },
+              { name: 'Pattern Recognizer', icon: '🔍', status: '✅' },
+              { name: 'Decomposition', icon: '🧩', status: '✅' },
+              { name: 'A* Search', icon: '🗺️', status: '✅' },
+              { name: 'Case-Based', icon: '📚', status: '✅' },
+              { name: 'Meta-Learning', icon: '🧠', status: '✅' },
+              { name: 'Fact Verification', icon: '✓', status: '✅' },
+              { name: 'Source Attribution', icon: '📎', status: '✅' },
+              { name: 'Contradiction Det.', icon: '⚠️', status: '✅' },
+              { name: 'Uncertainty Quant.', icon: '📊', status: '✅' },
+              { name: 'Real-Time Facts', icon: '🌐', status: '✅' },
+              { name: 'Self-Application', icon: '🔄', status: '✅' },
+              { name: 'Concept Blending', icon: '🎨', status: '✅' },
+              { name: 'Abstraction Layers', icon: '📐', status: '✅' },
+              { name: 'Analogical Chain', icon: '⛓️', status: '✅' },
+              { name: 'Combination Scorer', icon: '🎲', status: '✅' },
+              { name: 'Option Presenter', icon: '📋', status: '✅' },
+              { name: 'Intent Predictor', icon: '🔮', status: '✅' },
+              { name: 'Assumption Surfacer', icon: '💭', status: '✅' },
+              { name: 'Multi-Intent', icon: '🎯', status: '✅' },
+              { name: 'Physical Simulator', icon: '⚛️', status: '✅' },
+              { name: 'Causal Graph', icon: '🔀', status: '✅' },
+              { name: 'Social Norms', icon: '👥', status: '✅' },
+              { name: 'World Model', icon: '🌍', status: '✅' },
+              { name: 'Affordance Detect', icon: '🛠️', status: '✅' },
+              { name: 'Consequence Pred.', icon: '⚡', status: '✅' },
+              { name: 'Knowledge Infer.', icon: '🎓', status: '✅' },
+              { name: 'Context Activator', icon: '🎯', status: '✅' },
             ].map(sys => (
               <div key={sys.name} className="bg-gray-900/50 rounded-lg p-2 text-center">
                 <div className="text-lg mb-1">{sys.icon} {sys.status}</div>
@@ -241,19 +273,19 @@ function App() {
         {/* Implementation Status */}
         <div className="mt-8 grid md:grid-cols-3 gap-4">
           <div className="bg-gray-800/30 border border-gray-700/50 rounded-xl p-4">
-            <h3 className="font-semibold text-purple-400 mb-2 text-sm">✅ Implemented (11 Core Systems)</h3>
+            <h3 className="font-semibold text-purple-400 mb-2 text-sm">✅ Implemented (71 Systems)</h3>
             <ul className="text-xs text-gray-400 space-y-1">
               <li>• 2M Token Hierarchical Memory</li>
               <li>• Knowledge Graph with traversal</li>
               <li>• 1024D Semantic Space</li>
-              <li>• Code Versioning System</li>
-              <li>• Pronoun Resolution Engine</li>
-              <li>• Synonym Expansion (200+ words)</li>
-              <li>• Confidence Calibration</li>
-              <li>• Clarification Engine</li>
-              <li>• Constraint Solver</li>
-              <li>• Commonsense Reasoning</li>
-              <li>• Reasoning Process Monitor</li>
+              <li>• Paraphrase Handling (9 systems)</li>
+              <li>• Problem Solving (9 systems)</li>
+              <li>• Factual Accuracy (9 systems)</li>
+              <li>• Emergent Reasoning (5 systems)</li>
+              <li>• Language Understanding (9 systems)</li>
+              <li>• Ambiguity Resolution (9 systems)</li>
+              <li>• Implicit World Knowledge (9 systems)</li>
+              <li>• Code Versioning & Modification</li>
             </ul>
           </div>
           <div className="bg-gray-800/30 border border-gray-700/50 rounded-xl p-4">
@@ -294,23 +326,41 @@ function App() {
         <div className="mt-8 bg-gray-800/30 border border-gray-700/50 rounded-xl p-5">
           <h2 className="text-sm font-bold mb-3 flex items-center gap-2">
             <span>🗺️</span>
-            <span className="text-gray-400 uppercase tracking-wider text-xs">Remaining 279 Implementations</span>
+            <span className="text-gray-400 uppercase tracking-wider text-xs">Remaining 219 Implementations</span>
           </h2>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-[10px]">
             {[
-              'Knowledge Breadth', 'Language Understanding', 'Paraphrase',
-              'Problem Solving', 'Code Languages', 'Creative Writing',
-              'Multilingual', 'Factual Accuracy', 'Math Reasoning',
-              'Code Debugging', 'Nuance Detection', 'Ambiguity Resolution',
-              'Emergent Reasoning', 'World Knowledge', 'Unprecedented Inputs',
-              'Creative Leaps', 'Self-Correction', 'Deep Subtext',
-              'Edge Cases', 'Universal Capability', 'Temporal Reasoning',
-              'Spatial Reasoning', 'Social Reasoning', 'Ethical Reasoning',
-              'Metacognition', 'Theory of Mind', 'Counterfactual',
-              'Trading & Finance'
+              { name: 'Knowledge Breadth', done: false },
+              { name: 'Language Understanding', done: true },
+              { name: 'Paraphrase', done: true },
+              { name: 'Problem Solving', done: true },
+              { name: 'Code Languages', done: false },
+              { name: 'Creative Writing', done: false },
+              { name: 'Multilingual', done: false },
+              { name: 'Context Window', done: true },
+              { name: 'Factual Accuracy', done: true },
+              { name: 'Math Reasoning', done: false },
+              { name: 'Code Debugging', done: false },
+              { name: 'Nuance Detection', done: false },
+              { name: 'Ambiguity Resolution', done: true },
+              { name: 'Emergent Reasoning', done: true },
+              { name: 'World Knowledge', done: true },
+              { name: 'Unprecedented Inputs', done: false },
+              { name: 'Creative Leaps', done: false },
+              { name: 'Self-Correction', done: false },
+              { name: 'Deep Subtext', done: false },
+              { name: 'Edge Cases', done: false },
+              { name: 'Universal Capability', done: false },
+              { name: 'Temporal Reasoning', done: false },
+              { name: 'Spatial Reasoning', done: false },
+              { name: 'Social Reasoning', done: false },
+              { name: 'Ethical Reasoning', done: false },
+              { name: 'Metacognition', done: false },
+              { name: 'Theory of Mind', done: false },
+              { name: 'Counterfactual', done: false },
             ].map(cat => (
-              <div key={cat} className="bg-gray-900/50 rounded p-2 text-center text-gray-500">
-                🔲 {cat}
+              <div key={cat.name} className={`rounded p-2 text-center ${cat.done ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/30' : 'bg-gray-900/50 text-gray-500'}`}>
+                {cat.done ? '✅' : '🔲'} {cat.name}
               </div>
             ))}
           </div>
