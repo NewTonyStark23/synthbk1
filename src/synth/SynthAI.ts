@@ -50,6 +50,7 @@ import {
   UserStyleDetector,
   SelfVerification
 } from './enhanced-conversation';
+import { SyntheticLearningSystem } from './synthetic-ml';
 
 export interface SynthResult {
   response: string;
@@ -132,6 +133,9 @@ export class SynthAI {
   private lengthOptimizer: ResponseLengthOptimizer;
   private styleDetector: UserStyleDetector;
   private selfVerifier: SelfVerification;
+  
+  // Synthetic Machine Learning System (v5.0)
+  private syntheticML: SyntheticLearningSystem;
 
   // State
   private conversationHistory: any[] = [];
@@ -216,12 +220,16 @@ export class SynthAI {
     this.lengthOptimizer = new ResponseLengthOptimizer();
     this.styleDetector = new UserStyleDetector();
     this.selfVerifier = new SelfVerification();
+    
+    // Initialize Synthetic Machine Learning System (v5.0)
+    this.syntheticML = new SyntheticLearningSystem();
+    this.syntheticML.loadNetwork(); // Load existing trained network if available
 
     // Load persisted data
     this.knowledgeGraph.load();
     this.codeVersioning.load();
 
-    console.log('[SynthAI] v8.0 with extreme stress test repairs initialized');
+    console.log('[SynthAI] v9.0 with synthetic machine learning initialized');
   }
 
   async process(input: string): Promise<SynthResult> {
@@ -510,6 +518,15 @@ export class SynthAI {
       }
     }
     
+    // Try ML-enhanced generation (v5.0)
+    const mlResponse = this.generateWithML(resolvedInput);
+    if (mlResponse && mlResponse.length > response.length * 0.8) {
+      // Use ML response if it's comparable in length (indicates quality)
+      this.log('info', 'Using ML-enhanced response');
+      response = mlResponse;
+      this.reasoningMonitor.recordStep('ML-enhanced response generated', 0.85);
+    }
+    
     // Adapt response to user style
     const userStyle = this.styleDetector.detectStyle(resolvedInput, this.conversationHistory.map(h => h.userInput));
     response = this.styleDetector.adaptResponse(response, userStyle);
@@ -560,6 +577,13 @@ export class SynthAI {
       code,
       timestamp: Date.now()
     });
+    
+    // Learn from this conversation (v5.0)
+    // Only learn from successful, high-confidence responses
+    if (confidence > 0.7 && response.length > 50) {
+      this.syntheticML.learnFromConversation(resolvedInput, response, intent.type);
+      this.log('info', 'Learned from conversation', { confidence, intent: intent.type });
+    }
 
     this.reasoningMonitor.recordStep('Response generation complete', confidence);
 
@@ -1235,14 +1259,103 @@ export class SynthAI {
     
     return this.enhancedContext.getFullReport();
   }
+  
+  // ============================================
+  // Synthetic Machine Learning Methods (v5.0)
+  // ============================================
+  
+  /**
+   * Learn from a conversation pair
+   * This allows the system to improve over time
+   */
+  learnFromConversation(input: string, output: string, category: string = 'general'): void {
+    this.log('info', 'Learning from conversation', { inputLength: input.length, outputLength: output.length, category });
+    this.syntheticML.learnFromConversation(input, output, category);
+    this.log('success', 'Conversation learned');
+  }
+  
+  /**
+   * Train the neural network on accumulated data
+   */
+  trainML(epochs: number = 50): { finalError: number; improvements: number } {
+    this.log('info', 'Starting ML training', { epochs });
+    const result = this.syntheticML.train(epochs);
+    this.log('success', 'ML training complete', result);
+    return result;
+  }
+  
+  /**
+   * Generate response using ML (if trained)
+   */
+  private generateWithML(input: string): string | null {
+    const stats = this.syntheticML.getStats();
+    
+    // Only use ML if we have enough training data
+    if (!stats.isTrained || stats.totalExamples < 20) {
+      return null;
+    }
+    
+    this.log('info', 'Generating with ML', { trainingExamples: stats.totalExamples });
+    const response = this.syntheticML.generate(input);
+    
+    if (response && response.length > 10) {
+      this.log('success', 'ML generation successful', { responseLength: response.length });
+      return response;
+    }
+    
+    return null;
+  }
+  
+  /**
+   * Get ML system statistics
+   */
+  getMLStats(): any {
+    return this.syntheticML.getStats();
+  }
+  
+  /**
+   * Manual trigger to learn from recent conversation
+   */
+  learnFromRecentConversation(): void {
+    if (this.conversationHistory.length < 2) {
+      this.log('warning', 'Not enough conversation history to learn from');
+      return;
+    }
+    
+    // Learn from last exchange
+    const lastExchange = this.conversationHistory[this.conversationHistory.length - 1];
+    const prevExchange = this.conversationHistory[this.conversationHistory.length - 2];
+    
+    this.learnFromConversation(
+      prevExchange.userInput,
+      prevExchange.aiResponse,
+      prevExchange.intent || 'general'
+    );
+    
+    this.learnFromConversation(
+      lastExchange.userInput,
+      lastExchange.aiResponse,
+      lastExchange.intent || 'general'
+    );
+  }
 
   getStats() {
+    const mlStats = this.getMLStats();
+    
     return {
       turns: this.turns,
       conversationLength: this.conversationHistory.length,
       codeVersions: this.codeVersioning.getRecentVersions(100).length,
       semanticConcepts: this.semanticSpace.concepts.size,
-      reasoningSteps: this.reasoningMonitor.getReasoningTrace().split('\n').length
+      reasoningSteps: this.reasoningMonitor.getReasoningTrace().split('\n').length,
+      ml: {
+        isTrained: mlStats.isTrained,
+        totalExamples: mlStats.totalExamples,
+        vocabularySize: mlStats.vocabularySize,
+        networkLayers: mlStats.networkInfo.layers,
+        totalNeurons: mlStats.networkInfo.totalNeurons,
+        totalWeights: mlStats.networkInfo.totalWeights
+      }
     };
   }
 }
