@@ -55,7 +55,13 @@ export interface SynthResult {
   speed: any;
 }
 
+export interface LogCallback {
+  (type: 'info' | 'success' | 'warning' | 'error', message: string, data?: any): void;
+}
+
 export class SynthAI {
+  // Logging callback for UI integration
+  private logCallback: LogCallback | null = null;
   // Core infrastructure
   private memory: HierarchicalMemory;
   private knowledgeGraph: KnowledgeGraph;
@@ -120,6 +126,17 @@ export class SynthAI {
   private firstTokenTime = 0;
   private tokensGenerated = 0;
   private wordsGenerated = 0;
+
+  // Set logging callback for UI integration
+  setLogCallback(callback: LogCallback | null) {
+    this.logCallback = callback;
+  }
+
+  private log(type: 'info' | 'success' | 'warning' | 'error', message: string, data?: any) {
+    if (this.logCallback) {
+      this.logCallback(type, message, data);
+    }
+  }
 
   constructor() {
     // Initialize all core infrastructure
@@ -193,41 +210,64 @@ export class SynthAI {
     this.wordsGenerated = 0;
     this.turns++;
 
+    this.log('info', `Processing turn ${this.turns}`, { inputLength: input.length });
     this.reasoningMonitor.clear();
     this.reasoningMonitor.recordStep('Starting processing', 1.0);
 
     // Extreme Stress Test Repairs (v3.0) - Apply before other processing
+    this.log('info', 'Applying extreme stress test repairs...');
     const repairedInput = this.extremeRepairs.processWithRepairs(input);
     this.reasoningMonitor.recordStep('Extreme repairs applied', 0.98);
+    this.log('success', 'Extreme repairs applied', { 
+      originalLength: input.length, 
+      repairedLength: repairedInput.length,
+      repairsApplied: repairedInput !== input
+    });
 
     // Priority 1: Context Awareness - Track conversation
+    this.log('info', 'Tracking context...');
     const contextResult = this.contextResponder.processWith(repairedInput);
     const resolvedInput = contextResult.resolvedInput;
     const context = contextResult.context;
     this.reasoningMonitor.recordStep('Context tracking', 0.95);
+    this.log('success', 'Context tracked', { contextLength: context.length });
 
     // Step 1: Extract entities and resolve pronouns
+    this.log('info', 'Resolving pronouns...');
     this.pronounResolver.extractEntities(input);
     this.reasoningMonitor.recordStep('Pronoun resolution', 0.95);
 
     // Step 2: Expand synonyms for better matching
+    this.log('info', 'Expanding synonyms...');
     const expandedTerms = this.synonymExpander.expandText(resolvedInput);
     this.reasoningMonitor.recordStep('Synonym expansion', 0.9);
+    this.log('success', 'Synonyms expanded', { termCount: expandedTerms.length });
 
     // Step 3: Classify intent
+    this.log('info', 'Classifying intent...');
     const intent = this.classifyIntent(resolvedInput);
     this.reasoningMonitor.recordStep('Intent classification', intent.confidence);
+    this.log('success', 'Intent classified', { 
+      intent: intent.type, 
+      confidence: intent.confidence 
+    });
 
     // Step 4: Detect emotion
+    this.log('info', 'Detecting emotion...');
     const emotion = this.detectEmotion(resolvedInput);
     this.reasoningMonitor.recordStep('Emotion detection', 0.85);
+    this.log('success', 'Emotion detected', { emotion });
 
     // Step 5: Apply commonsense reasoning
+    this.log('info', 'Applying commonsense reasoning...');
     const commonsense = this.commonsenseReasoner.reason([resolvedInput]);
     this.reasoningMonitor.recordStep('Commonsense reasoning', 0.8);
+    this.log('success', 'Commonsense reasoning applied', { factsCount: commonsense.length });
 
     // Step 6: Check for multi-task requests
+    this.log('info', 'Checking for multi-task requests...');
     const detectedTasks = this.multiTaskHandler.detectTasks(resolvedInput);
+    this.log('info', 'Multi-task detection complete', { taskCount: detectedTasks.length });
     
     // Step 7: Generate response based on intent
     this.firstTokenTime = Date.now();
@@ -478,7 +518,7 @@ export class SynthAI {
     const totalTime = (Date.now() - this.startTime) / 1000;
     const ttfb = this.firstTokenTime > 0 ? (this.firstTokenTime - this.startTime) / 1000 : 0;
 
-    return {
+    const result: SynthResult = {
       response,
       thinking,
       code,
@@ -497,6 +537,25 @@ export class SynthAI {
         tps: totalTime > 0 ? this.tokensGenerated / totalTime : 0
       }
     };
+
+    // Log final result
+    this.log('success', 'Response generated', {
+      intent: intent.type,
+      confidence: confidence,
+      responseLength: response.length,
+      hasCode: !!code,
+      processingTime: totalTime,
+      tokensGenerated: this.tokensGenerated
+    });
+
+    if (code) {
+      this.log('success', 'Code generated', {
+        codeLength: code.length,
+        intent: intent.type
+      });
+    }
+
+    return result;
   }
 
   private resolvePronouns(input: string): string {
